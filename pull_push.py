@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from pymongo import MongoClient
+from airflow.providers.mongo.hooks.mongo import MongoHook
 
 def process_images(get_images_func, **context):
     """Get images from API and return URLs and metadata"""
