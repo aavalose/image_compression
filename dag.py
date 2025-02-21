@@ -26,8 +26,9 @@ def compress_images(ti, **context):
 
 with DAG(
     dag_id="images_compression",
-    start_date=datetime.datetime(2025, 2, 22),
-    schedule="@daily",
+    start_date=datetime.datetime.now(),  # Start today
+    end_date=datetime.datetime.now() + datetime.timedelta(days=3),  # End in 3 days
+    schedule_interval="0 0,12 * * *",  # Twice a day: midnight and noon
     catchup=False,
     max_active_runs=1
 ):
