@@ -13,17 +13,15 @@ def process_images(get_images_func, **context):
 def push_to_mongodb(**kwargs):
     """Push image data to MongoDB"""
     try:
-        ti = kwargs['ti']
-        # Pull the data from xcom between tasks
-        data = ti.xcom_pull(task_ids=kwargs['task_ids'])
+        results = kwargs[1]
         hook = MongoHook(mongo_conn_id='mongo_default')
         client = hook.get_conn()
         # Access database and collection
         db = client.image
         collection = db.image_collection
         print(f"Connected to MongoDB - {client.server_info()}")
-        print(data)
-        collection.insert_many(data)
+        print(results)
+        collection.insert_many(results)
     except Exception as e:
         print(f"Error connecting to MongoDB -- {e}")
 
@@ -228,3 +226,15 @@ with DAG(
     # Set task dependencies
     pexels_start >> pexels_to_mongo
     unsplash_start >> unsplash_to_mongo
+
+
+
+
+
+
+
+
+
+
+
+
