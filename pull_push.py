@@ -5,6 +5,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from pymongo import MongoClient
 from airflow.providers.mongo.hooks.mongo import MongoHook
+import traceback
 
 def process_images(get_images_func, **context):
     """Get images from API and return URLs and metadata"""
@@ -14,17 +15,24 @@ def process_images(get_images_func, **context):
 def push_to_mongodb(**kwargs):
     """Push image data to MongoDB"""
     try:
-        results = kwargs[1]
-        hook = MongoHook(mongo_conn_id='mongo_default')
+        task_instance = kwargs['ti']  # Get task instance
+        results = task_instance.xcom_pull(task_ids=kwargs['task_ids'])  # Fetch XCom data
+
+        if not results or not isinstance(results, dict):  
+            raise ValueError("No valid data received from XCom")
+
+        hook = MongoHook(mongo_conn_id='mongo_connect')
         client = hook.get_conn()
-        # Access database and collection
-        db = client.image
-        collection = db.image_collection
+
+        db = client.images
+        collection = db.raw_data
         print(f"Connected to MongoDB - {client.server_info()}")
         print(results)
-        collection.insert_many(results)
+        
+        collection.insert_many(results['metadata'])  # Insert metadata (adjust as needed)
     except Exception as e:
         print(f"Error connecting to MongoDB -- {e}")
+        print(traceback.format_exc())
 
 
 def get_pexels_images(query=None, limit=10, photo_id=None, photographer=None):
@@ -190,7 +198,7 @@ def get_wallhaven_photos(query=None, photo_id=None, limit=10):
 
 
 with DAG(
-    dag_id="images_compression",
+    dag_id="get_API_raw_data",
     start_date=datetime.datetime.now(),  # Start today
     end_date=datetime.datetime.now() + datetime.timedelta(days=3),  # End in 3 days
     schedule_interval="0 0,12 * * *",  # Twice a day: midnight and noon
@@ -214,20 +222,20 @@ with DAG(
     pexels_to_mongo = PythonOperator(
         task_id="pexels_to_mongo",
         python_callable=push_to_mongodb,
-        op_kwargs={'data': "{{ task_instance.xcom_pull(task_ids='pexels_start') }}"}
+        provide_context=True,
+        op_kwargs={'task_ids': 'pexels_start'}
     )
-
     # Task to push Unsplash data to MongoDB
     unsplash_to_mongo = PythonOperator(
         task_id="unsplash_to_mongo",
         python_callable=push_to_mongodb,
-        op_kwargs={'data': "{{ task_instance.xcom_pull(task_ids='unsplash_start') }}"}
+        provide_context=True,
+        op_kwargs={'task_ids': 'unsplash_start'}
     )
 
     # Set task dependencies
     pexels_start >> pexels_to_mongo
     unsplash_start >> unsplash_to_mongo
-
 
 
 
