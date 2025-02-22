@@ -82,7 +82,7 @@ def get_pexels_images(query=None, limit=10, photo_id=None, photographer=None):
     }
 
     response = requests.get(
-        'https://api.pexels.com/v1/search',
+        'https://api.pexels.com/v1/search?query=nature',
         headers=headers,
         params=params
     )
@@ -236,14 +236,3 @@ with DAG(
     # Set task dependencies
     pexels_start >> pexels_to_mongo
     unsplash_start >> unsplash_to_mongo
-
-
-
-
-
-
-
-
-
-
-
