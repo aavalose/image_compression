@@ -34,7 +34,6 @@ def push_to_mongodb(**kwargs):
         print(f"Error connecting to MongoDB -- {e}")
         print(traceback.format_exc())
 
-
 def get_pexels_images(query=None, limit=10, photo_id=None, photographer=None):
     """
     Retrieves images from the Pexels API based on provided parameters.
@@ -196,7 +195,6 @@ def get_wallhaven_photos(query=None, photo_id=None, limit=10):
     photo_urls = [photo['path'] for photo in result]
     return photo_urls, result
 
-
 with DAG(
     dag_id="get_API_raw_data",
     start_date=datetime.datetime.now(),  # Start today
@@ -236,3 +234,14 @@ with DAG(
     # Set task dependencies
     pexels_start >> pexels_to_mongo
     unsplash_start >> unsplash_to_mongo
+
+
+
+
+
+
+
+
+
+
+
