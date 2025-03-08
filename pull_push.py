@@ -7,11 +7,6 @@ from pymongo import MongoClient
 from airflow.providers.mongo.hooks.mongo import MongoHook
 import traceback
 
-def process_images(get_images_func, **context):
-    """Get images from API and return URLs and metadata"""
-    urls, metadata = get_images_func(limit=5)
-    return {'urls': urls, 'metadata': metadata}
-
 def push_to_mongodb(**kwargs):
     """Push image data to MongoDB"""
     try:
@@ -152,48 +147,10 @@ def get_unsplash_images(query=None, photo_id=None, photographer=None, limit=10):
     photo_urls = [photo['urls']['raw'] for photo in result]
     return photo_urls, result
 
-def get_wallhaven_photos(query=None, photo_id=None, limit=10):
-    """Retrieve photos from Wallhaven API.
-
-    Args:
-        query (str, optional): Search query for photos. Defaults to None.
-        photo_id (str, optional): Specific photo ID to retrieve. Defaults to None.
-        limit (int, optional): Maximum number of photos to return. Defaults to 10.
-
-    Returns:
-        tuple: Lists of photo URLs and metadata
-    """
-    key = 't7Jx4fJDMjTyIdApWsmAxx5KDmeBskgj'
-
-    if photo_id:
-        response = requests.get(
-            f'https://wallhaven.cc/api/v1/w/{photo_id}',
-            params={'apikey': key}
-        )
-        photo = response.json()['data']
-        return [photo['path']], [photo]
-
-    params = {
-        'apikey': key,
-        'q': query if query else '',
-        'limit': limit
-    }
-
-    response = requests.get(
-        'https://wallhaven.cc/api/v1/search',
-        params=params
-    )
-    
-    photos = response.json()['data']
-    
-    result = []
-    for photo in photos:
-        result.append(photo)
-        if len(result) >= limit:
-            break
-
-    photo_urls = [photo['path'] for photo in result]
-    return photo_urls, result
+def process_images(get_images_func, **context):
+    """Get images from API and return URLs and metadata"""
+    urls, metadata = get_images_func(limit=5)
+    return {'urls': urls, 'metadata': metadata}
 
 with DAG(
     dag_id="get_API_raw_data",
@@ -234,14 +191,3 @@ with DAG(
     # Set task dependencies
     pexels_start >> pexels_to_mongo
     unsplash_start >> unsplash_to_mongo
-
-
-
-
-
-
-
-
-
-
-
